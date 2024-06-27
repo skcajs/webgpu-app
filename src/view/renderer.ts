@@ -3,7 +3,6 @@ import shader from './shaders/shaders.wgsl?raw'
 import { TriangleMesh } from './triangleMesh';
 import { mat4 } from "gl-matrix";
 import { Camera } from '../model/camera';
-import { Triangle } from '../model/triangle';
 
 export class Renderer {
     canvas: HTMLCanvasElement;
@@ -14,6 +13,7 @@ export class Renderer {
     format: GPUTextureFormat;
 
     uniformBuffer: GPUBuffer;
+    objectBuffer: GPUBuffer;
     bindGroup: GPUBindGroup;
     pipeline: GPURenderPipeline;
 
@@ -28,6 +28,7 @@ export class Renderer {
         this.context = undefined!;
         this.format = undefined!;
         this.uniformBuffer = undefined!;
+        this.objectBuffer = undefined!;
         this.bindGroup = undefined!;
         this.pipeline = undefined!;
         this.triangleMesh = undefined!;
@@ -58,7 +59,7 @@ export class Renderer {
     async makePipeline() {
 
         this.uniformBuffer = this.device.createBuffer({
-            size: 64 * 3,
+            size: 64 * 2,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
@@ -78,6 +79,14 @@ export class Renderer {
                     binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
                     sampler: {}
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: "read-only-storage",
+                        hasDynamicOffset: false
+                    }
                 }
             ],
         });
@@ -98,6 +107,12 @@ export class Renderer {
                 {
                     binding: 2,
                     resource: this.material.sampler
+                },
+                {
+                    binding: 3,
+                    resource: {
+                        buffer: this.objectBuffer
+                    }
                 }
             ],
         });
@@ -137,18 +152,26 @@ export class Renderer {
         this.triangleMesh = new TriangleMesh(this.device);
         this.material = new Material();
 
+        const modelBufferDescriptor: GPUBufferDescriptor = {
+            size: 64 * 1024,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        };
+
+        this.objectBuffer = this.device.createBuffer(modelBufferDescriptor);
+
         await this.material.initialize(this.device, "public/img/tile.jpg");
     }
 
-    async render(camera: Camera, triangles: Triangle[]) {
+    async render(camera: Camera, triangles: Float32Array, triangleCount: number) {
         const projection = mat4.create();
         mat4.perspective(projection, Math.PI / 4, 800 / 600, 0.1, 10);
 
         const view = camera.getView();
 
 
-        this.device.queue.writeBuffer(this.uniformBuffer, 64, <ArrayBuffer>view);
-        this.device.queue.writeBuffer(this.uniformBuffer, 128, <ArrayBuffer>projection);
+        this.device.queue.writeBuffer(this.objectBuffer, 0, triangles, 0, triangles.length);
+        this.device.queue.writeBuffer(this.uniformBuffer, 0, <ArrayBuffer>view);
+        this.device.queue.writeBuffer(this.uniformBuffer, 64, <ArrayBuffer>projection);
 
         const commandEncoder: GPUCommandEncoder = this.device.createCommandEncoder();
         const textureView: GPUTextureView = this.context.getCurrentTexture().createView();
@@ -163,14 +186,8 @@ export class Renderer {
         renderpass.setPipeline(this.pipeline);
 
         renderpass.setVertexBuffer(0, this.triangleMesh.buffer);
-
-        triangles.forEach(triangle => {
-            const model = triangle.getModel();
-            this.device.queue.writeBuffer(this.uniformBuffer, 0, <ArrayBuffer>model);
-            renderpass.setBindGroup(0, this.bindGroup);
-            renderpass.draw(3, 1, 0, 0);
-        })
-
+        renderpass.setBindGroup(0, this.bindGroup);
+        renderpass.draw(3, triangleCount, 0, 0);
         renderpass.end();
 
         this.device.queue.submit([commandEncoder.finish()]);

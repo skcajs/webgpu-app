@@ -1,19 +1,35 @@
-import { vec3 } from "gl-matrix"
+import { vec3, mat4 } from "gl-matrix"
 import { Triangle } from "./triangle";
 import { Camera } from "./camera";
 
 export class Scene {
     triangles: Triangle[];
     camera: Camera;
+    objectData: Float32Array;
+    triangleCount: number;
 
     constructor() {
         this.triangles = [];
-        this.triangles.push(
-            new Triangle(
-                [2, 0, 0],
-                0
-            )
-        );
+        this.objectData = new Float32Array(16 * 1024);
+        this.triangleCount = 0;
+
+        let i: number = 0;
+        for (let y: number = -5; y < 5; y++) {
+            this.triangles.push(
+                new Triangle(
+                    [2, y, 0],
+                    0
+                )
+            );
+
+            // Initialise objectData to a load of identity matrices
+            let blankMatrix = mat4.create();
+            for (let j: number = 0; j < 16; j++) {
+                this.objectData[16 * i + j] = <number>blankMatrix[j];
+            }
+            ++i;
+            this.triangleCount++;
+        }
 
         this.camera = new Camera(
             [-2, 0, 0.5], 0, 0
@@ -21,11 +37,20 @@ export class Scene {
     }
 
     update() {
-        this.triangles.forEach(triangle => triangle.update());
+        let i: number = 0;
+        this.triangles.forEach(triangle => {
+            triangle.update()
+            let model = triangle.getModel();
+            for (let j: number = 0; j < 16; j++) {
+                this.objectData[16 * i + j] = <number>model[j];
+            }
+            ++i;
+        });
+
         this.camera.update();
     }
 
-    spinCamera(dx: number, dy: number) {
+    orbitCamera(dx: number, dy: number) {
         this.camera.eulers[2] -= dx;
         this.camera.eulers[2] %= 360;
 
@@ -41,7 +66,7 @@ export class Scene {
         return this.camera;
     }
 
-    getTriangles(): Triangle[] {
-        return this.triangles;
+    getTriangles(): Float32Array {
+        return this.objectData;
     }
 }

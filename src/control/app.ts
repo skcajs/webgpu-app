@@ -48,8 +48,9 @@ export class App {
 
         this.renderer.render(
             this.scene.getCamera(),
-            this.scene.getTriangles()
-        )
+            this.scene.getTriangles(),
+            this.scene.triangleCount
+        );
 
         if (running) {
             requestAnimationFrame(this.run);
@@ -95,7 +96,8 @@ export class App {
     handleMouseMove(event: MouseEvent) {
         this.mouseXLabel.innerText = event.clientX.toString();
         this.mouseYLabel.innerText = event.clientY.toString();
-
-        this.scene.spinCamera(event.movementX / 10, event.movementY / 100);
+        if (document.pointerLockElement === this.canvas) {
+            this.scene.orbitCamera(event.movementX * 0.1, event.movementY * -0.005);
+        }
     }
 }

@@ -1,4 +1,5 @@
 import { vec3, mat4 } from "gl-matrix"
+import { deg2Rad } from "./maths";
 import { Triangle } from "./triangle";
 import { Quad } from "./quad";
 import { Camera } from "./camera";
@@ -90,7 +91,8 @@ export class Scene {
         this.camera.eulers[2] -= dx;
         this.camera.eulers[2] %= 360;
 
-        this.camera.eulers[1] = Math.min(89, Math.max(-89, this.camera.eulers[1] + dy));
+        const extents = deg2Rad(89);
+        this.camera.eulers[1] = Math.min(extents, Math.max(-extents, this.camera.eulers[1] - dy));
     }
 
     moveCamera(forwardAmount: number, rightAmount: number) {

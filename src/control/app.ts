@@ -105,7 +105,7 @@ export class App {
         this.mouseXLabel.innerText = event.clientX.toString();
         this.mouseYLabel.innerText = event.clientY.toString();
         if (document.pointerLockElement === this.canvas) {
-            this.scene.orbitCamera(event.movementX * 0.1, event.movementY * -0.005);
+            this.scene.orbitCamera(event.movementX * 0.1, event.movementY * 0.005);
         }
     }
 }

@@ -2,6 +2,7 @@ import { Material } from './material';
 import shader from './shaders/shaders.wgsl?raw'
 import { TriangleMesh } from './triangleMesh';
 import { QuadMesh } from './quadMesh';
+import { ObjectMesh } from './objMesh';
 import { mat4 } from "gl-matrix";
 import { objectTypes, RenderData } from '../model/definitions';
 
@@ -27,6 +28,7 @@ export class Renderer {
 
     triangleMesh: TriangleMesh;
     quadMesh: QuadMesh;
+    statueMesh: ObjectMesh;
     triangleMaterial: Material;
     quadMaterial: Material;
 
@@ -49,6 +51,7 @@ export class Renderer {
         this.depthStencilAttachment = undefined!;
         this.triangleMesh = undefined!;
         this.quadMesh = undefined!;
+        this.statueMesh = undefined!;
         this.triangleMaterial = undefined!;
         this.quadMaterial = undefined!;
     }
@@ -191,6 +194,8 @@ export class Renderer {
     async createAssets() {
         this.triangleMesh = new TriangleMesh(this.device);
         this.quadMesh = new QuadMesh(this.device);
+        this.statueMesh = new ObjectMesh();
+        await this.statueMesh.initialise(this.device, 'public/models/statue.obj')
         this.triangleMaterial = new Material();
         this.quadMaterial = new Material();
 
@@ -256,16 +261,25 @@ export class Renderer {
         renderpass.setBindGroup(0, this.frameBindGroup);
 
         let objectsDrawn: number = 0;
+
         // Triangles
         renderpass.setVertexBuffer(0, this.triangleMesh.buffer);
         renderpass.setBindGroup(1, this.triangleMaterial.bindGroup);
         renderpass.draw(3, renderables.objectCounts[objectTypes.TRIANGLE], 0, objectsDrawn);
         objectsDrawn += renderables.objectCounts[objectTypes.TRIANGLE];
+
         // Quads
         renderpass.setVertexBuffer(0, this.quadMesh.buffer);
         renderpass.setBindGroup(1, this.quadMaterial.bindGroup);
         renderpass.draw(6, renderables.objectCounts[objectTypes.QUAD], 0, objectsDrawn);
         objectsDrawn += renderables.objectCounts[objectTypes.QUAD];
+
+        // Quads
+        renderpass.setVertexBuffer(0, this.statueMesh.buffer);
+        renderpass.setBindGroup(1, this.triangleMaterial.bindGroup);
+        renderpass.draw(this.statueMesh.vertexCount, 1, 0, objectsDrawn);
+        objectsDrawn += 1;
+
         renderpass.end();
 
         this.device.queue.submit([commandEncoder.finish()]);

@@ -2,12 +2,14 @@ import { vec3, mat4 } from "gl-matrix"
 import { deg2Rad } from "./maths";
 import { Triangle } from "./triangle";
 import { Quad } from "./quad";
+import { Statue } from "./statue";
 import { Camera } from "./camera";
 import { objectTypes, RenderData } from "./definitions";
 
 export class Scene {
     triangles: Triangle[];
     quads: Quad[];
+    statue: Statue;
     camera: Camera;
     objectData: Float32Array;
     triangleCount: number;
@@ -22,6 +24,10 @@ export class Scene {
 
         this.makeTriangles();
         this.makeQuads();
+
+        this.statue = new Statue(
+            [0, 0, 0], [0, 0, 0]
+        );
 
         this.camera = new Camera(
             [-2, 0, 0.5], 0, 0
@@ -83,6 +89,13 @@ export class Scene {
             }
             ++i;
         });
+
+        this.statue.update();
+        let model = this.statue.getModel();
+        for (let j: number = 0; j < 16; j++) {
+            this.objectData[16 * i + j] = <number>model[j];
+        }
+        ++i;
 
         this.camera.update();
     }

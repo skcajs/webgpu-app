@@ -252,7 +252,7 @@ export class Renderer {
 
     async render(renderables: RenderData) {
         const projection = mat4.create();
-        mat4.perspective(projection, Math.PI / 4, 800 / 600, 0.1, 10);
+        mat4.perspective(projection, Math.PI / 4, 800 / 600, 0.1, 100);
 
         const view = renderables.viewTransform;
 

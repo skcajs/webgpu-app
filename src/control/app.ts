@@ -11,6 +11,8 @@ export class App {
     mouseXLabel: HTMLElement;
     mouseYLabel: HTMLElement;
 
+    keysPressed: Set<string>;
+    speed: number;
     forwardAmount: number;
     rightAmount: number;
 
@@ -19,8 +21,10 @@ export class App {
         this.renderer = new Renderer(canvas);
         this.scene = new Scene();
 
+        this.speed = 0.02;
         this.forwardAmount = 0;
         this.rightAmount = 0;
+        this.keysPressed = new Set();
 
         this.keyLabel = <HTMLElement>document.getElementById("key-label");
         $(document).on("keydown", (event => this.handleKeyDown(event)));
@@ -47,9 +51,7 @@ export class App {
         this.scene.moveCamera(this.forwardAmount, this.rightAmount);
 
         this.renderer.render(
-            this.scene.getCamera(),
-            this.scene.getTriangles(),
-            this.scene.triangleCount
+            this.scene.getRenderables()
         );
 
         if (running) {
@@ -59,37 +61,43 @@ export class App {
 
     handleKeyDown(event: JQuery.KeyDownEvent) {
         this.keyLabel.innerText = event.code;
+        this.keysPressed.add(event.code);
 
-        switch (event.code) {
-            case "KeyW":
-                this.forwardAmount = 0.02;
-                break;
-            case "KeyS":
-                this.forwardAmount = -0.02;
-                break;
-            case "KeyA":
-                this.rightAmount = -0.02;
-                break;
-            case "KeyD":
-                this.rightAmount = 0.02;
-        }
+        this.updateSpeed();
+        this.updateMovement();
     }
 
     handleKeyUp(event: JQuery.KeyUpEvent) {
         this.keyLabel.innerText = event.code;
+        this.keysPressed.delete(event.code);
 
-        switch (event.code) {
-            case "KeyW":
-                this.forwardAmount = 0;
-                break;
-            case "KeyS":
-                this.forwardAmount = 0;
-                break;
-            case "KeyA":
-                this.rightAmount = 0;
-                break;
-            case "KeyD":
-                this.rightAmount = 0;
+        this.updateSpeed();
+        this.updateMovement();
+    }
+
+    updateSpeed() {
+        if (this.keysPressed.has("ShiftLeft")) {
+            this.speed = 0.04;
+        } else {
+            this.speed = 0.02;
+        }
+    }
+
+    updateMovement() {
+        if (this.keysPressed.has("KeyW")) {
+            this.forwardAmount = this.speed;
+        } else if (this.keysPressed.has("KeyS")) {
+            this.forwardAmount = -this.speed;
+        } else {
+            this.forwardAmount = 0;
+        }
+
+        if (this.keysPressed.has("KeyA")) {
+            this.rightAmount = -this.speed;
+        } else if (this.keysPressed.has("KeyD")) {
+            this.rightAmount = this.speed;
+        } else {
+            this.rightAmount = 0;
         }
     }
 

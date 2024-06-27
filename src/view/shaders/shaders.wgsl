@@ -8,9 +8,10 @@ struct ObjectData {
 }
 
 @binding(0) @group(0) var<uniform> transformUBO: TransformData;
-@binding(1) @group(0) var uTexture: texture_2d<f32>;
-@binding(2) @group(0) var uSampler: sampler;
-@binding(3) @group(0) var<storage, read> objects: ObjectData;
+@binding(1) @group(0) var<storage, read> objects: ObjectData;
+
+@binding(0) @group(1) var uTexture: texture_2d<f32>;
+@binding(1) @group(1) var uSampler: sampler;
 
 struct Fragment {
     @builtin(position) Position : vec4<f32>,

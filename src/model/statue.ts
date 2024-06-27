@@ -16,11 +16,11 @@ export class Statue {
     update() {
         this.eulers[2] += 1;
         this.eulers[2] %= 360;
-
         this.model = mat4.create();
+        mat4.rotateX(this.model, this.model, deg2Rad(90));
+
         mat4.translate(this.model, this.model, this.position);
-        mat4.rotateY(this.model, this.model, deg2Rad(this.eulers[1]));
-        mat4.rotateZ(this.model, this.model, deg2Rad(this.eulers[2]));
+        mat4.rotateY(this.model, this.model, deg2Rad(this.eulers[2]));
     }
 
     getModel(): mat4 {
